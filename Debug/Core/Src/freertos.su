@@ -1,0 +1,4 @@
+freertos.c:93:6:MX_FREERTOS_Init	8	static
+freertos.c:134:6:StatusLedTask	16	static
+freertos.c:157:6:RcHandlerTask	56	static
+freertos.c:185:6:HAL_UART_RxCpltCallback	16	static
