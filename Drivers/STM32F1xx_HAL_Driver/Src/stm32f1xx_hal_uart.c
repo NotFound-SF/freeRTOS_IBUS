@@ -2989,6 +2989,11 @@ static HAL_StatusTypeDef UART_Receive_IT(UART_HandleTypeDef *huart)
   uint8_t  *pdata8bits;
   uint16_t *pdata16bits;
 
+  /* Parse IBUS protocol */
+  if (huart->Instance == USART1) {
+    return IBUS_Receive_IT(huart);
+  }
+
   /* Check that a Rx process is ongoing */
   if (huart->RxState == HAL_UART_STATE_BUSY_RX)
   {

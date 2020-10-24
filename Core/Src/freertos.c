@@ -27,6 +27,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "usart.h"
+#include "ibus.h"
 
 /* USER CODE END Includes */
 
@@ -137,7 +138,7 @@ void StatusLedTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    HAL_GPIO_TogglePin(status_led_GPIO_Port, status_led_Pin);
+    //HAL_GPIO_TogglePin(status_led_GPIO_Port, status_led_Pin);
     osDelay(1000);
   }
   /* USER CODE END StatusLedTask */
@@ -157,13 +158,22 @@ uint8_t *hex_tb = (uint8_t *)"0123456789ABCDEF";
 void RcHandlerTask(void *argument)
 {
   /* USER CODE BEGIN RcHandlerTask */
-  uint8_t ibus_data[32], i, j;
+  uint8_t ibus_data[IBUS_SERIAL_RX_PACKET_LENGTH], i, j;
   uint8_t *ch = ibus_data + 2;
+  static uint16_t cnt;
   /* Infinite loop */
   for(;;)
   {
     HAL_UART_Receive_IT(&huart1, ibus_data, sizeof(ibus_data));
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    cnt++;
+    if (cnt > 2) {
+      HAL_GPIO_TogglePin(status_led_GPIO_Port, status_led_Pin);
+      cnt = 0;
+    }
+
+    /*
     for (i = 0, j = 0; i < (sizeof(ibus_data)-2); i+=2, j+=5) {
       ibus_str[j+0] = *(hex_tb + (ch[i+0] >> 4));
       ibus_str[j+1] = *(hex_tb + (ch[i+0] & 0xF));
@@ -174,6 +184,7 @@ void RcHandlerTask(void *argument)
     ibus_str[75] = '\r';
     ibus_str[76] = '\n';
     HAL_UART_Transmit(&huart1, ibus_str, 77, 120);
+    */
   }
   /* USER CODE END RcHandlerTask */
 }
@@ -181,13 +192,6 @@ void RcHandlerTask(void *argument)
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 
-// 中断中调
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-  if (huart == &huart1) {
-    vTaskNotifyGiveFromISR(rcHandlerTaskHandle, NULL);
-  }
-}
 
 /* USER CODE END Application */
 
