@@ -138,7 +138,7 @@ void StatusLedTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    //HAL_GPIO_TogglePin(status_led_GPIO_Port, status_led_Pin);
+    HAL_GPIO_TogglePin(status_led_GPIO_Port, status_led_Pin);
     osDelay(1000);
   }
   /* USER CODE END StatusLedTask */
@@ -160,32 +160,35 @@ void RcHandlerTask(void *argument)
   /* USER CODE BEGIN RcHandlerTask */
   uint8_t ibus_data[IBUS_SERIAL_RX_PACKET_LENGTH], i, j;
   uint8_t *ch = ibus_data + 2;
-  static uint16_t cnt;
+  uint16_t check_sum = 0, *check_sum_p = (uint16_t*)(ibus_data+30);
   /* Infinite loop */
+
+  // Only call once
+  HAL_UART_Receive_IT(&huart1, ibus_data, sizeof(ibus_data));
   for(;;)
   {
-    HAL_UART_Receive_IT(&huart1, ibus_data, sizeof(ibus_data));
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-
-    cnt++;
-    if (cnt > 2) {
-      HAL_GPIO_TogglePin(status_led_GPIO_Port, status_led_Pin);
-      cnt = 0;
+    if (*check_sum_p == check_sum) {
+      continue;
+    }
+    check_sum = *check_sum_p;
+    if (!isChecksumOkIa6b(ibus_data)) {
+      HAL_UART_Transmit(&huart1, (uint8_t*)"checksum failed!\r\n", 18, 120);
+      continue;
     }
 
-    /*
-    for (i = 0, j = 0; i < (sizeof(ibus_data)-2); i+=2, j+=5) {
+    for (i = 0, j = 0; i < 32-2-2; i+=2, j+=5) {
       ibus_str[j+0] = *(hex_tb + (ch[i+0] >> 4));
       ibus_str[j+1] = *(hex_tb + (ch[i+0] & 0xF));
       ibus_str[j+2] = *(hex_tb + (ch[i+1] >> 4));
       ibus_str[j+3] = *(hex_tb + (ch[i+1] & 0xF));
       ibus_str[j+4] = '\t';
     }
-    ibus_str[75] = '\r';
-    ibus_str[76] = '\n';
-    HAL_UART_Transmit(&huart1, ibus_str, 77, 120);
-    */
+    ibus_str[70] = '\r';
+    ibus_str[71] = '\n';
+    HAL_UART_Transmit(&huart1, ibus_str, 72, 120);
   }
+
   /* USER CODE END RcHandlerTask */
 }
 
