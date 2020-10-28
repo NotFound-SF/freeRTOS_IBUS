@@ -2,8 +2,10 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "cmsis_os.h"
+#include "ibus.h"
 
 
+uint16_t ibus_channel[IBUS_CHANNELS];
 extern osThreadId_t rcHandlerTaskHandle;
 
 
@@ -74,7 +76,7 @@ HAL_StatusTypeDef IBUS_Receive_IT(UART_HandleTypeDef *huart)
 }
 
 
-uint8_t isChecksumOkIa6b(const uint8_t *ibusPacket)
+static uint8_t isChecksumOkIa6b(const uint8_t *ibusPacket)
 {
   uint16_t calculatedChecksum = calculateChecksum(ibusPacket);
 
@@ -82,4 +84,38 @@ uint8_t isChecksumOkIa6b(const uint8_t *ibusPacket)
   return (calculatedChecksum >> 8) == ibusPacket[IBUS_SERIAL_RX_PACKET_LENGTH - 1]
         && (calculatedChecksum & 0xFF) == ibusPacket[IBUS_SERIAL_RX_PACKET_LENGTH - 2];
 }
+
+
+void ibusUpdateChannel(const uint8_t *ibusPacket)
+{
+  uint16_t i;
+  uint16_t *channelPos = (uint16_t*)(ibusPacket+2);
+
+  if (!isChecksumOkIa6b(ibusPacket)) {
+    return;
+  }
+
+  for (i = 0; i < IBUS_CHANNELS; i++) {
+    ibus_channel[i] = channelPos[i];
+  }
+}
+
+
+uint16_t ibusGetChannel(uint8_t idx)
+{
+  return ibus_channel[idx];
+}
+
+uint16_t ibusGetChannelHundred(uint8_t idx)
+{
+  uint32_t tmp = ibus_channel[idx];
+
+  if (tmp < IBUS_DATA_BEGIN) {
+    return 0;
+  }
+
+  return 100 * (tmp - IBUS_DATA_BEGIN) / IBUS_DATA_INTERVAL;
+}
+
+
 

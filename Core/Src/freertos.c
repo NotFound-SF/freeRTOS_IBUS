@@ -28,6 +28,7 @@
 /* USER CODE BEGIN Includes */
 #include "usart.h"
 #include "ibus.h"
+#include "rc_handler.h"
 
 /* USER CODE END Includes */
 
@@ -139,7 +140,7 @@ void StatusLedTask(void *argument)
   for(;;)
   {
     HAL_GPIO_TogglePin(status_led_GPIO_Port, status_led_Pin);
-    osDelay(1000);
+    osDelay(600);
   }
   /* USER CODE END StatusLedTask */
 }
@@ -151,42 +152,30 @@ void StatusLedTask(void *argument)
 * @retval None
 */
 /* USER CODE END Header_RcHandlerTask */
-
-uint8_t ibus_str[80];
-uint8_t *hex_tb = (uint8_t *)"0123456789ABCDEF";
-
 void RcHandlerTask(void *argument)
 {
   /* USER CODE BEGIN RcHandlerTask */
-  uint8_t ibus_data[IBUS_SERIAL_RX_PACKET_LENGTH], i, j;
-  uint8_t *ch = ibus_data + 2;
-  uint16_t check_sum = 0, *check_sum_p = (uint16_t*)(ibus_data+30);
+  uint8_t ibusData[IBUS_SERIAL_RX_PACKET_LENGTH];
+  uint16_t checkSum = 0;
+  uint16_t *checkSumPos = (uint16_t*)(ibusData+IBUS_SERIAL_RX_PACKET_LENGTH-2);
   /* Infinite loop */
 
   // Only call once
-  HAL_UART_Receive_IT(&huart1, ibus_data, sizeof(ibus_data));
+  initRcActionHandler();
+  HAL_UART_Receive_IT(&huart1, ibusData, sizeof(ibusData));
   for(;;)
   {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-    if (*check_sum_p == check_sum) {
-      continue;
-    }
-    check_sum = *check_sum_p;
-    if (!isChecksumOkIa6b(ibus_data)) {
-      HAL_UART_Transmit(&huart1, (uint8_t*)"checksum failed!\r\n", 18, 120);
+    // Process only when the message changes
+    if (*checkSumPos == checkSum) {
       continue;
     }
 
-    for (i = 0, j = 0; i < 32-2-2; i+=2, j+=5) {
-      ibus_str[j+0] = *(hex_tb + (ch[i+0] >> 4));
-      ibus_str[j+1] = *(hex_tb + (ch[i+0] & 0xF));
-      ibus_str[j+2] = *(hex_tb + (ch[i+1] >> 4));
-      ibus_str[j+3] = *(hex_tb + (ch[i+1] & 0xF));
-      ibus_str[j+4] = '\t';
-    }
-    ibus_str[70] = '\r';
-    ibus_str[71] = '\n';
-    HAL_UART_Transmit(&huart1, ibus_str, 72, 120);
+   // HAL_UART_Transmit(&huart1, (uint8_t*)"1234", 4, 60);
+
+    checkSum = *checkSumPos;
+    ibusUpdateChannel(ibusData);
+    RcActionHandler();
   }
 
   /* USER CODE END RcHandlerTask */
