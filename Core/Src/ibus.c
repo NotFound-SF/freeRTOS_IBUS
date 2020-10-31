@@ -106,15 +106,21 @@ uint16_t ibusGetChannel(uint8_t idx)
   return ibus_channel[idx];
 }
 
+
 uint16_t ibusGetChannelHundred(uint8_t idx)
 {
   uint32_t tmp = ibus_channel[idx];
 
-  if (tmp < IBUS_DATA_BEGIN) {
+  if (tmp < IBUS_DATA_BEGIN+160) {
     return 0;
   }
 
-  return 100 * (tmp - IBUS_DATA_BEGIN) / IBUS_DATA_INTERVAL;
+  tmp = 100 * (tmp - IBUS_DATA_BEGIN) / IBUS_DATA_INTERVAL;
+  if (tmp >= 94) {
+    return 100;
+  }
+
+  return tmp;
 }
 
 

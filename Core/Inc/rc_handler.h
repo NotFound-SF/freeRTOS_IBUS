@@ -13,6 +13,8 @@
 
 #define SPEED_CH     2
 #define DIRECTION_CH 3
+#define FB_SW_CH     4   // Forward and backward switch
+#define FL_SW_CH     5   // Headlamp switch
 
 
 void RcActionHandler();
