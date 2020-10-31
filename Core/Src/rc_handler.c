@@ -34,18 +34,11 @@ void initRcActionHandler()
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_4);
 }
 
-
-
 static uint8_t isSwitchOn(uint8_t sw)
 {
   return IBUS_DATA_END == ibusGetChannel(sw);
 }
 
-
-enum DIRECTION {
-  DIRC_FORWARD,
-  DIRC_BACK,
-};
 
 static void leftControl(uint16_t speed, enum DIRECTION dirc)
 {

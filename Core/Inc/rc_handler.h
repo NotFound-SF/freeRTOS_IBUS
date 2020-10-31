@@ -16,6 +16,11 @@
 #define FB_SW_CH     4   // Forward and backward switch
 #define FL_SW_CH     5   // Headlamp switch
 
+enum DIRECTION {
+  DIRC_FORWARD,
+  DIRC_BACK,
+};
+
 
 void RcActionHandler();
 void initRcActionHandler();

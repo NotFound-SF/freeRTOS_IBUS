@@ -171,8 +171,6 @@ void RcHandlerTask(void *argument)
       continue;
     }
 
-   // HAL_UART_Transmit(&huart1, (uint8_t*)"1234", 4, 60);
-
     checkSum = *checkSumPos;
     ibusUpdateChannel(ibusData);
     RcActionHandler();
